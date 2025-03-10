@@ -298,14 +298,22 @@ public class TaskManagementSystem
 
     public bool CompleteTask(int taskId)
     {
-        var task = _tasks.FirstOrDefault(t => t.Id == taskId);
-        if (task is not { Status: TaskStatus.InProgress }) return false;
-        task.Status = TaskStatus.Completed;
-        task.CompletedDate = DateTime.Now;
+        _semaphore.Wait();
+        try
+        {
+            var task = _tasks.FirstOrDefault(t => t.Id == taskId);
+            if (task is not { Status: TaskStatus.InProgress }) return false;
+            task.Status = TaskStatus.Completed;
+            task.CompletedDate = DateTime.Now;
 
-        _completedTasks.Push(task);
+            _completedTasks.Push(task);
 
-        return true;
+            return true;
+        }
+        finally
+        {
+            _semaphore.Release();
+        }
     }
 
     public IEnumerable<DevelopmentTask> GetAllTasks() => _tasks;
